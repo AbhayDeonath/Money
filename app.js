@@ -123,7 +123,7 @@ function download(blob,name){const url=URL.createObjectURL(blob),a=document.crea
 function backup(){const payload={app:"Money",version:1,exportedAt:new Date().toISOString(),transactions:state.transactions,theme:state.theme,profile:state.profile};download(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),"money-backup-"+today()+".json");toast("Backup downloaded. Keep it somewhere safe.")}
 function parseCSV(text){
  const rows=[];let row=[],field="",quoted=false;
- for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];if(quoted){if(c==='"'&&next==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===","){row.push(field);field=""}else if(c==="\\n"){row.push(field);rows.push(row);row=[];field=""}else if(c!=="\\r")field+=c}
+ for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];if(quoted){if(c==='"'&&next==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===","){row.push(field);field=""}else if(c==="\n"){row.push(field);rows.push(row);row=[];field=""}else if(c!=="\r")field+=c}
  if(field.length||row.length){row.push(field);rows.push(row)}
  if(rows.length<2)return [];
  const headers=rows.shift().map(h=>h.trim().toLowerCase()),index=name=>headers.indexOf(name);
@@ -134,12 +134,12 @@ function parseCSV(text){
 async function importBackup(file){
  try{
   const textContent=await file.text();let incoming,profile=state.profile,theme=state.theme;
-  if(file.name.toLowerCase().endsWith(".csv")||/transaction name\\s*,\\s*amount/i.test(textContent.slice(0,180)))incoming=parseCSV(textContent);
+  if(file.name.toLowerCase().endsWith(".csv")||/transaction name\s*,\s*amount/i.test(textContent.slice(0,180)))incoming=parseCSV(textContent);
   else{const data=JSON.parse(textContent);if(Array.isArray(data))incoming=data;else if(data&&Array.isArray(data.transactions)){incoming=data.transactions;profile=normalizeProfile(data.profile||profile);theme=["light","dark","system"].includes(data.theme)?data.theme:theme}else throw new Error("This file does not contain a transaction list.")}
   const clean=incoming.map(normalizeTransaction).filter(Boolean);
   if(incoming.length&&!clean.length)throw new Error("No valid transactions were found. Check the file's categories and dates.");
   const invalid=incoming.length-clean.length;
-  const message="Import "+clean.length+" valid transaction(s)?"+(invalid?" "+invalid+" invalid entr"+(invalid===1?"y was":"ies were")+" skipped.":"")+"\\n\\nThis replaces the transactions currently in Money. Continue?";
+  const message="Import "+clean.length+" valid transaction(s)?"+(invalid?" "+invalid+" invalid entr"+(invalid===1?"y was":"ies were")+" skipped.":"")+"\n\nThis replaces the transactions currently in Money. Continue?";
   if(!confirm(message))return;
   const old={transactions:state.transactions,profile:state.profile,theme:state.theme};state.transactions=clean;state.profile=profile;state.theme=theme;
   if(!saveData()){Object.assign(state,old);return}
