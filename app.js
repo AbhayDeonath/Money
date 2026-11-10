@@ -122,6 +122,7 @@ function exportCSV(){
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200)}
 function backup(){const payload={app:"Money",version:1,exportedAt:new Date().toISOString(),transactions:state.transactions,theme:state.theme,profile:state.profile};download(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),"money-backup-"+today()+".json");toast("Backup downloaded. Keep it somewhere safe.")}
 function parseCSV(text){
+ text=text.replace(/^\\uFEFF/,\"\");
  const rows=[];let row=[],field="",quoted=false;
  for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];if(quoted){if(c==='"'&&next==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===","){row.push(field);field=""}else if(c==="\n"){row.push(field);rows.push(row);row=[];field=""}else if(c!=="\r")field+=c}
  if(field.length||row.length){row.push(field);rows.push(row)}
