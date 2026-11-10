@@ -121,21 +121,30 @@ function exportCSV(){
 }
 function download(blob,name){const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1200)}
 function backup(){const payload={app:"Money",version:1,exportedAt:new Date().toISOString(),transactions:state.transactions,theme:state.theme,profile:state.profile};download(new Blob([JSON.stringify(payload,null,2)],{type:"application/json"}),"money-backup-"+today()+".json");toast("Backup downloaded. Keep it somewhere safe.")}
+function parseCSV(text){
+ const rows=[];let row=[],field="",quoted=false;
+ for(let i=0;i<text.length;i++){const c=text[i],next=text[i+1];if(quoted){if(c==='"'&&next==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===","){row.push(field);field=""}else if(c==="\\n"){row.push(field);rows.push(row);row=[];field=""}else if(c!=="\\r")field+=c}
+ if(field.length||row.length){row.push(field);rows.push(row)}
+ if(rows.length<2)return [];
+ const headers=rows.shift().map(h=>h.trim().toLowerCase()),index=name=>headers.indexOf(name);
+ const col={title:index("transaction name"),amount:index("amount (inr)"),type:index("type"),category:index("category"),date:index("date"),method:index("payment method"),note:index("note")};
+ if(col.title<0||col.amount<0||col.type<0||col.category<0||col.date<0)throw new Error("CSV columns do not match a Money or MyFinance transaction export.");
+ return rows.filter(r=>r.some(v=>v.trim())).map(r=>({id:createId(),title:r[col.title],amount:Number(r[col.amount]),type:String(r[col.type]||"").toLowerCase(),category:r[col.category],date:r[col.date],method:col.method>=0?r[col.method]:"Other",note:col.note>=0?r[col.note]:"",createdAt:Date.now()}));
+}
 async function importBackup(file){
  try{
-  const data=JSON.parse(await file.text());let incoming,profile=state.profile,theme=state.theme;
-  if(Array.isArray(data))incoming=data;
-  else if(data&&Array.isArray(data.transactions)){incoming=data.transactions;profile=normalizeProfile(data.profile||profile);theme=["light","dark","system"].includes(data.theme)?data.theme:theme}
-  else throw new Error("This file does not contain a transaction list.");
+  const textContent=await file.text();let incoming,profile=state.profile,theme=state.theme;
+  if(file.name.toLowerCase().endsWith(".csv")||/transaction name\\s*,\\s*amount/i.test(textContent.slice(0,180)))incoming=parseCSV(textContent);
+  else{const data=JSON.parse(textContent);if(Array.isArray(data))incoming=data;else if(data&&Array.isArray(data.transactions)){incoming=data.transactions;profile=normalizeProfile(data.profile||profile);theme=["light","dark","system"].includes(data.theme)?data.theme:theme}else throw new Error("This file does not contain a transaction list.")}
   const clean=incoming.map(normalizeTransaction).filter(Boolean);
-  if(incoming.length&&!clean.length)throw new Error("No valid transactions were found in this backup.");
+  if(incoming.length&&!clean.length)throw new Error("No valid transactions were found. Check the file's categories and dates.");
   const invalid=incoming.length-clean.length;
-  const message="Import "+clean.length+" valid transaction(s)?"+(invalid?" "+invalid+" invalid entr"+(invalid===1?"y was":"ies were")+" skipped.":"")+"\n\nChoose OK to replace the data currently in Money, or Cancel to keep it.";
+  const message="Import "+clean.length+" valid transaction(s)?"+(invalid?" "+invalid+" invalid entr"+(invalid===1?"y was":"ies were")+" skipped.":"")+"\\n\\nThis replaces the transactions currently in Money. Continue?";
   if(!confirm(message))return;
   const old={transactions:state.transactions,profile:state.profile,theme:state.theme};state.transactions=clean;state.profile=profile;state.theme=theme;
   if(!saveData()){Object.assign(state,old);return}
-  setTheme(state.theme,false);renderAll();toast("Backup imported successfully.");
- }catch(e){toast(e.message||"Could not read this backup.")}
+  setTheme(state.theme,false);renderAll();toast("Import completed successfully.");
+ }catch(e){toast(e.message||"Could not read this file.")}
 }
 function clearAll(){
  if(!confirm("Permanently delete all transactions and profile details from this browser? Download a backup first if you may need this data."))return;
