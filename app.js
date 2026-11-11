@@ -178,3 +178,85 @@ $("#clearDataBtn").addEventListener("click",clearAll);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){closeTransaction();closeProfile();$("#sidebar").classList.remove("open")}});
 setTheme(state.theme,false);setType("expense");renderAll();showView("dashboard");
 })();
+
+/* Motion layer: decorative only; does not alter finance data or app workflows. */
+(() => {
+  const root = document.documentElement;
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const finePointer = window.matchMedia && window.matchMedia("(pointer: fine)").matches;
+
+  if (!reduceMotion && finePointer) {
+    let pointerFrame = 0;
+    window.addEventListener("pointermove", event => {
+      if (pointerFrame) cancelAnimationFrame(pointerFrame);
+      pointerFrame = requestAnimationFrame(() => {
+        const x = (event.clientX / Math.max(1, window.innerWidth) - 0.5) * 2;
+        const y = (event.clientY / Math.max(1, window.innerHeight) - 0.5) * 2;
+        root.style.setProperty("--pointer-x", x.toFixed(2));
+        root.style.setProperty("--pointer-y", y.toFixed(2));
+      });
+    }, { passive: true });
+  }
+
+  if (!reduceMotion && "IntersectionObserver" in window) {
+    const revealObserver = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("is-visible");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.08 });
+    document.querySelectorAll(".summary-card, .panel, .settings-panel").forEach((element, index) => {
+      element.classList.add("motion-ready");
+      element.style.setProperty("--reveal-order", Math.min(index, 8));
+      revealObserver.observe(element);
+    });
+  }
+
+  if (!reduceMotion) {
+    const moneyNodes = document.querySelectorAll(".amount-large, .amount-medium, .donut-center strong");
+    const previous = new WeakMap();
+    const active = new WeakSet();
+    const readAmount = value => {
+      const cleaned = String(value).replace(/,/g, "").replace(/[^0-9.-]/g, "");
+      return cleaned && Number.isFinite(Number(cleaned)) ? Number(cleaned) : null;
+    };
+    const renderAmount = (value, prefix, decimals) => prefix + new Intl.NumberFormat("en-IN", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals
+    }).format(value);
+    moneyNodes.forEach(node => {
+      previous.set(node, readAmount(node.textContent) ?? 0);
+    });
+    const amountObserver = new MutationObserver(records => {
+      records.forEach(record => {
+        const node = record.target;
+        if (active.has(node)) return;
+        const target = readAmount(node.textContent);
+        if (target === null) return;
+        const start = previous.get(node) ?? 0;
+        if (Math.abs(target - start) < 0.005) return;
+        const sample = node.textContent.trim();
+        const prefix = sample.match(/^[^0-9-]*/)?.[0] || "";
+        const decimals = sample.includes(".") ? Math.min(2, sample.split(".").pop().length) : 0;
+        active.add(node);
+        const started = performance.now();
+        const duration = 720;
+        const tick = now => {
+          const progress = Math.min(1, (now - started) / duration);
+          const eased = 1 - Math.pow(1 - progress, 4);
+          node.textContent = renderAmount(start + (target - start) * eased, prefix, decimals);
+          if (progress < 1) requestAnimationFrame(tick);
+          else {
+            node.textContent = renderAmount(target, prefix, decimals);
+            previous.set(node, target);
+            active.delete(node);
+          }
+        };
+        requestAnimationFrame(tick);
+      });
+    });
+    moneyNodes.forEach(node => amountObserver.observe(node, { childList: true, characterData: true, subtree: true }));
+  }
+})();
