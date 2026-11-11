@@ -325,3 +325,25 @@ body[data-theme="dark"] .brand-mark span{color:#c66b45}
 @media(prefers-reduced-motion:reduce){
  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+/* Staggered entrances and responsive ambient movement */
+.ambient-lines{transform:translate3d(calc(var(--pointer-x,0) * -8px),calc(var(--pointer-y,0) * -6px),0);transition:transform 1.2s var(--ease)}
+.summary-card{animation:card-arrive .85s var(--ease) both}
+.summary-card:nth-child(1){animation-delay:.05s}
+.summary-card:nth-child(2){animation-delay:.12s}
+.summary-card:nth-child(3){animation-delay:.19s}
+.summary-card:nth-child(4){animation-delay:.26s}
+@keyframes card-arrive{from{opacity:0;transform:translateY(18px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+.panel{animation:panel-arrive .9s var(--ease) both}
+.dashboard-columns .panel:nth-child(2){animation-delay:.13s}
+.recent-panel{animation-delay:.2s}
+@keyframes panel-arrive{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+tbody tr{animation:row-enter .55s var(--ease) both}
+tbody tr:nth-child(2){animation-delay:.04s}
+tbody tr:nth-child(3){animation-delay:.08s}
+tbody tr:nth-child(4){animation-delay:.12s}
+tbody tr:nth-child(5){animation-delay:.16s}
+@keyframes row-enter{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+.motion-ready{opacity:0;transform:translateY(16px);transition:opacity .8s var(--ease),transform .8s var(--ease);transition-delay:calc(var(--reveal-order,0) * 45ms)}
+.motion-ready.is-visible{opacity:1;transform:translateY(0)}
+@media(prefers-reduced-motion:reduce){.motion-ready{opacity:1;transform:none}.ambient-lines{transform:none!important}}
