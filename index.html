@@ -3,16 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#f5f6f1">
-  <meta name="description" content="A calm, thoughtful space to understand and manage your money.">
-  <title>Money — Personal finance</title>
+  <meta name="theme-color" content="#f3f0e8">
+  <meta name="description" content="A living financial ledger for a clearer view of your money.">
+  <title>Money — A living financial ledger</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <script src="app.js" defer></script>
 </head>
 <body>
+  <div class="ambient-backdrop" aria-hidden="true">
+    <svg class="ambient-lines" viewBox="0 0 1600 1000" preserveAspectRatio="none">
+      <path d="M-120 250 C180 30 270 520 560 300 S980 60 1190 290 S1510 520 1740 180"/>
+      <path d="M-120 290 C180 70 270 560 560 340 S980 100 1190 330 S1510 560 1740 220"/>
+      <path d="M-120 330 C180 110 270 600 560 380 S980 140 1190 370 S1510 600 1740 260"/>
+    </svg>
+    <div class="ambient-scan"></div>
+  </div>
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <a class="brand" href="#" aria-label="Money home">
