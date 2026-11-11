@@ -351,3 +351,7 @@ tbody tr:nth-child(5){animation-delay:.16s}
 .motion-ready:not(.is-visible){animation:none!important}
 .summary-card.motion-ready.is-visible{animation:card-arrive .85s var(--ease) both}
 .panel.motion-ready.is-visible{animation:panel-arrive .9s var(--ease) both}
+
+.transaction-cell{display:flex;align-items:center;gap:10px;min-width:180px}
+.transaction-icon{width:32px;height:32px;flex:0 0 32px;display:grid;place-items:center;border-radius:50%;background:var(--surface-2);color:var(--accent);font-size:14px}
+.orbit-one,.orbit-two{display:none}
